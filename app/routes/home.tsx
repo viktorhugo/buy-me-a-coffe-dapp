@@ -1,7 +1,12 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
 import { Navigate, redirect } from "react-router";
-import { ThemeProvider } from "next-themes";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -17,10 +22,13 @@ export const loader = async () => { // no se ha cargado el componente
   return redirect('/main');
 } 
 
+// Create a client
+const queryClient = new QueryClient()
+
 export default function Home() {
   return (
-    <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
       <Navigate to="/main" />
-    </ThemeProvider> 
+    </QueryClientProvider> 
   )
 }

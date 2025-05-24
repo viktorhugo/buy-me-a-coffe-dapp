@@ -4,11 +4,6 @@ export default [
     index("routes/home.tsx"),
     // Main
     ...prefix('/main', [
-        layout(
-            "layouts/main-layout.tsx", [
-                index("routes/main/main-page.tsx"),
-                // route('client', "routes/main/main-page.tsx")
-            ]
-        )
+        index("layouts/main-layout.tsx"),
     ]),
 ] satisfies RouteConfig;
