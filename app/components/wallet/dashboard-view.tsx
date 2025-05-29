@@ -6,58 +6,21 @@ import { Button } from "../ui/button";
 import { MarketCard } from "./market-card";
 import { AssetTable } from "./asset-table";
 import { Loader } from "../ui/loading";
-import { createWalletClient, createPublicClient, custom, http } from "viem";
 import { ConnectWalletDialog } from "./connect-wallet-dialog";
+import { useWalletStore } from "~/store/wallet-store";
+import { coffeAbi, contractAddress } from "./constants";
+import { defineChain, type PublicClient } from "viem";
 
 // Make sure the component is exported as default
 export const DashboardView = () => {
-    const [isConnected, setIsConnected] = useState(false);
-    const [account, setAccount] = useState<string | undefined>(undefined);
-
-    const connectPublicClient = () => {
-        // Declare a Public Client
-        // This creates a public client using the Sepolia chain and an HTTP transport
-        const publicClient = createPublicClient({
-            // chain: sepolia,
-            transport: http("https://rpc.sepolia.org"),
-        });
     
-        // Return the public client
-        return publicClient;
-    }
-    
-    const connectWalletClient = async () => {
-        // Check for window.ethereum
-        // window.ethereum is an object provided by MetaMask or other web3 wallets
-        let transport;
-        if (window.ethereum) {
-            // If window.ethereum exists, create a custom transport using it
-            transport = custom(window.ethereum);
-        } else {
-            // If window.ethereum is not available, throw an error
-            const errorMessage = "MetaMask or another web3 wallet is not installed. Please install one to proceed.";
-            throw new Error(errorMessage);
-        }
-    
-        // Declare a Wallet Client
-        // This creates a wallet client using the Sepolia chain and the custom transport
-        const walletClient = createWalletClient({
-            // chain: sepolia,
-            transport: transport,
-        });
-        const addresses = await walletClient.requestAddresses();
-        if (addresses.length > 0) {
-            setIsConnected(true)
-            setAccount(addresses[0])
-            console.log(addresses[0], "connected");
-        }
-    }
+    const { isWalletConnected } = useWalletStore((state) => state);
 
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
-            {   isConnected 
+            {   isWalletConnected 
                 ? <ConnectedView /> 
-                : <NotConnectedView onConnect={() => connectWalletClient()} />
+                : <NotConnectedView />
             }
         </div>
     )
@@ -170,14 +133,56 @@ function ConnectedView() {
     )
 }
 
-function NotConnectedView({ onConnect }: { onConnect: () => void }) {
+function NotConnectedView() {
 
-    const [showConnectDialog, setShowConnectDialog] = useState(false)
-
-    const handleConnect = () => {
-        setShowConnectDialog(false)
+    const { publicClient, mainAccount, walletClient } = useWalletStore((state) => state);
+    
+    async function getWalletBalance() {
+        if (!publicClient || !mainAccount) {
+            console.error('No wallet client found');
+            return;
+        };
+        const balance = await publicClient.getBalance({
+            address: mainAccount as `0x${string}`,
+        });
+        return balance;
     }
 
+    async function fund() {
+        if (!publicClient || !walletClient) {
+            console.error('No wallet client found');
+            return;
+        };
+        const [connectedAccount] = await walletClient.requestAddresses();
+        const balance = await publicClient.simulateContract({
+            address: contractAddress,
+            abi: coffeAbi,
+            functionName: 'fund',
+            args: [connectedAccount],
+        });
+        return balance;
+    }
+
+    async function getCurrentChain(publicClient: PublicClient) {
+        const chainId = await publicClient.getChainId()
+        const currentChain = defineChain({
+            id: chainId,
+            name: "Custom Chain",
+            nativeCurrency: {
+                name: "Ether",
+                symbol: "ETH",
+                decimals: 18,
+            },
+            rpcUrls: {
+                default: {
+                http: ["http://localhost:8545"],
+                },
+            },
+        })
+        return currentChain
+    }
+
+    const [showConnectDialog, setShowConnectDialog] = useState(false);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[70dvh] text-center">
@@ -189,7 +194,7 @@ function NotConnectedView({ onConnect }: { onConnect: () => void }) {
                 Please connect your wallet to see your supplies, borrowings, and open positions.
             </p>
             <Button
-                onClick={() => setShowConnectDialog(true)}
+                onClick={ () => setShowConnectDialog(true) }
                 size="lg"
                 className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
             >

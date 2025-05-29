@@ -10,17 +10,19 @@ import {
 import { ExternalLink, Settings, Wallet } from "lucide-react"
 import { useState } from "react"
 import { ConnectWalletDialog } from "./connect-wallet-dialog";
+import { Form } from "react-router";
+import { useWalletStore } from "~/store/wallet-store";
 
 
 
-export function UserNav({ walletAddress }: { walletAddress?: string }) {
-    const [isConnected, setIsConnected] = useState(false);
+export function UserNav() {
     const [showConnectDialog, setShowConnectDialog] = useState(false);
+    const { isWalletConnected, mainAccount, setIsWalletConnected } = useWalletStore((state) => state);
 
     return (
         <>
             {
-                isConnected && walletAddress 
+                isWalletConnected && mainAccount 
                 ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -29,7 +31,7 @@ export function UserNav({ walletAddress }: { walletAddress?: string }) {
                                 className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
                             >
                                 <Wallet className="mr-2 size-4" />
-                                {walletAddress.substring(0,4)}...{walletAddress.substring(walletAddress.length - 4)}
+                                {mainAccount.substring(0,4)}...{mainAccount.substring(mainAccount.length - 4)}
                             </Button>
                         </DropdownMenuTrigger>
 
@@ -45,9 +47,11 @@ export function UserNav({ walletAddress }: { walletAddress?: string }) {
                                     <span>Settings</span>
                                 </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setIsConnected(false)}>
-                                Disconnect
-                            </DropdownMenuItem>
+                            <Form method="post" action="/home">
+                                <DropdownMenuItem onClick={() => setIsWalletConnected(false)}>
+                                    Disconnect
+                                </DropdownMenuItem>
+                            </Form>    
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (

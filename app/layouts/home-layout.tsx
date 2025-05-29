@@ -1,13 +1,11 @@
 import { MainNav } from '~/components/wallet/main-nav';
 import { UserNav } from '~/components/wallet/nav-bar';
 import { DashboardView } from '~/components/wallet/dashboard-view';
-import type { Route } from './+types/main-layout';
+import type { Route } from './+types/home-layout';
 import { getSession } from '~/sessions.server';
-declare global {
-    interface Window {
-        ethereum?: any;
-    }
-}
+import { useFetcher } from 'react-router';
+import { Toaster } from 'sonner';
+
 
 // Executed when the route is loaded, (RouteModule)
 export const loader = async ({ request, context, params }: Route.LoaderArgs) => {
@@ -37,17 +35,20 @@ const MainLayout = ({
     params,
 }: Route.ComponentProps ) => {
 
-    console.log(' MainLayout =>> loaderData', loaderData);
-    const main_account  = '0x72...4Ek9';
+    const fetcher = useFetcher();
+    if (fetcher?.data) {
+        console.log(' MainLayout =>> data fetcher', fetcher);
+    }
 
-    
+    console.log(' MainLayout =>> loaderData', loaderData);
+
     return (
         <div className="flex min-h-dvh flex-col bg-gradient-to-b from-slate-950 to-slate-900">
             <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm">
                 <div className="flex h-16 items-center px-4 sm:px-6">
                     <MainNav />
                     <div className="ml-auto flex items-center space-x-3">
-                        <UserNav walletAddress={main_account} />
+                        <UserNav/>
                     </div>
                 </div>
             </header>
@@ -68,6 +69,8 @@ const MainLayout = ({
                     </div>
                 </div>
             </footer>
+
+            <Toaster position="top-right" />
         </div>
     )
 }

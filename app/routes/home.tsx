@@ -19,7 +19,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export const loader = async () => { // no se ha cargado el componente
-  return redirect('/main');
+  return redirect('/home');
 } 
 
 // Create a client
@@ -28,7 +28,7 @@ const queryClient = new QueryClient()
 export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Navigate to="/main" />
+      <Navigate to="/home" />
     </QueryClientProvider> 
   )
 }
