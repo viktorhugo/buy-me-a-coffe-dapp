@@ -11,9 +11,11 @@ import type { EIP6963ProviderDetail } from './injected-wallet-provider/types';
 import { useSyncProviders } from '~/hooks/useSyncProviders';
 import { toast } from "sonner";
 import { X } from "lucide-react";
-import { useWalletStore } from "~/store/wallet-store";
-import { createPublicClient, createWalletClient, type EIP1193Provider, type PublicClient, type WalletClient } from "viem";
+import { getCurrentChain, useWalletStore } from "~/store/wallet-store";
+import { createPublicClient, createWalletClient, parseEther, type Abi, type Address, type EIP1193Provider, type PublicClient, type SimulateContractParameters, type WalletClient } from "viem";
 import { custom } from "viem";
+import { abi } from "./constants";
+import { contractAddress } from "./constants";
 
 declare global {
     interface Window {
@@ -30,7 +32,6 @@ const createViemPublicClient = (providerDetails: EIP6963ProviderDetail): PublicC
 
     // This creates a public client using the Sepolia chain and the custom transport
     const publicClient = createPublicClient({
-        // chain: sepolia,
         transport: custom( providerDetails.provider ),
     });
 
@@ -41,7 +42,6 @@ const createViemWalletClient = (providerDetails: EIP6963ProviderDetail): WalletC
 
     // This creates a wallet client using the Sepolia chain and the custom transport
     const walletClient = createWalletClient({
-        // chain: sepolia,
         transport: custom( providerDetails.provider ),
     });
 
@@ -52,7 +52,7 @@ export function ConnectWalletDialog({ open, onOpenChange }: ConnectWalletDialogP
 
     const providers = useSyncProviders();
     // Access the client
-    const { setMainAccount, setIsWalletConnected, setEIP6963Provider, setPublicClient, setWalletClient} = useWalletStore((state) => state)
+    const { setMainAccount, setIsWalletConnected, setEIP6963Provider, setPublicClient, setWalletClient, setWalletBalance, setContractBalance} = useWalletStore((state) => state)
     
     const handleConnect = async ( providerWithInfo: EIP6963ProviderDetail ) => {
         const accounts: string[] | undefined =
@@ -91,6 +91,16 @@ export function ConnectWalletDialog({ open, onOpenChange }: ConnectWalletDialogP
             setMainAccount(accounts?.[0]);
             // Set the wallet connected status
             setIsWalletConnected(true);
+            // Get the balance
+            const balance = await viemPublicClient.getBalance({
+                address: accounts?.[0] as Address,
+            });
+            setWalletBalance(balance);
+            // Get the contract balance
+            const contractBalance = await viemPublicClient.getBalance({
+                address: contractAddress as Address,
+            });
+            setContractBalance(contractBalance);
         }
     }
 
@@ -109,16 +119,14 @@ export function ConnectWalletDialog({ open, onOpenChange }: ConnectWalletDialogP
                                 type="submit"
                                 variant="secondary"
                                 className="flex cursor-pointer w-full justify-between items-center h-16 px-4 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
-                                onClick={ () => handleConnect(provider) }
-                                >
+                                onClick={ () => handleConnect(provider) }>
                                 <div className="flex items-center gap-3">
-                                <img src={provider.info.icon} alt={provider.info.name} className="w-8 h-8" />
+                                    <img src={provider.info.icon} alt={provider.info.name} className="w-8 h-8" />
                                     <div className="flex flex-col items-start">
                                         <span className="font-medium text-lg">{provider.info.name}</span>
                                         <span className="text-sm text-white">Connect your wallet</span>
                                     </div>
                                 </div>
-                                <div className="absolute right-0 w-24 h-full bg-gradient-to-l from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
                             </Button>
                         </div>
                     )) :

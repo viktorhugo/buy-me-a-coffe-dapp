@@ -15,18 +15,21 @@ export const loader = async ({ request, context, params }: Route.LoaderArgs) => 
     return { message: "Hello, world Loader Data! - Server", data: { main_account } };
 }
 
-export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
-    console.log('client Loader called - Client');
+export async function clientLoader({ serverLoader, request, context, params }: Route.ClientLoaderArgs) {
+    console.log('client Loader called - Client')
     // const session = await getSession();
     // const main_account = session.get('walletAddress');
-    return { message: "Hello, world Loader Data! - Server", data: {  } };
+    return { message: "Hello, world Loader Data! - Server", data: {params  } };
 }
 
-export async function clientAction({ serverAction, request }: Route.ClientActionArgs) {
-    console.log('Client - ClientActionArgs'); 
-    const requestData = await request.clone().formData(); // CLONAR EL REQUEST
-    const data = await serverAction();
-    return { message: "Hello, From the client Action! - Client", data, requestData };
+export async function action({ request, context, params }: Route.ActionArgs) { // action que llega al backend
+    console.log('action - side action called'); 
+    const data = await request.formData();
+    console.log('action  =>> request.formData()', { data }); 
+    const amount = data.get('amount');
+    // checkValidationForm();
+    // can still call the server action if needed
+    return { amount } ;
 }
 
 const MainLayout = ({
@@ -40,7 +43,8 @@ const MainLayout = ({
         console.log(' MainLayout =>> data fetcher', fetcher);
     }
 
-    console.log(' MainLayout =>> loaderData', loaderData);
+    // console.log(' MainLayout =>> loaderData', loaderData);
+    // console.log(' MainLayout =>> actionData', actionData);
 
     return (
         <div className="flex min-h-dvh flex-col bg-gradient-to-b from-slate-950 to-slate-900">
