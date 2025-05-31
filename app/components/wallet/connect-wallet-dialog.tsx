@@ -10,11 +10,9 @@ import {
 import type { EIP6963ProviderDetail } from './injected-wallet-provider/types';
 import { useSyncProviders } from '~/hooks/useSyncProviders';
 import { toast } from "sonner";
-import { X } from "lucide-react";
-import { getCurrentChain, useWalletStore } from "~/store/wallet-store";
-import { createPublicClient, createWalletClient, parseEther, type Abi, type Address, type EIP1193Provider, type PublicClient, type SimulateContractParameters, type WalletClient } from "viem";
+import { getBalance, useWalletStore } from "~/store/wallet-store";
+import { createPublicClient, createWalletClient, type Address, type PublicClient, type WalletClient } from "viem";
 import { custom } from "viem";
-import { abi } from "./constants";
 import { contractAddress } from "./constants";
 
 declare global {
@@ -92,14 +90,12 @@ export function ConnectWalletDialog({ open, onOpenChange }: ConnectWalletDialogP
             // Set the wallet connected status
             setIsWalletConnected(true);
             // Get the balance
-            const balance = await viemPublicClient.getBalance({
-                address: accounts?.[0] as Address,
-            });
-            setWalletBalance(balance);
+            const walletBalance = await getBalance(viemPublicClient, accounts?.[0] as Address);
+            console.log('walletBalance', walletBalance);
+            setWalletBalance(walletBalance);
             // Get the contract balance
-            const contractBalance = await viemPublicClient.getBalance({
-                address: contractAddress as Address,
-            });
+            const contractBalance = await getBalance(viemPublicClient, contractAddress as Address);
+            console.log('contractBalance', contractBalance);
             setContractBalance(contractBalance);
         }
     }

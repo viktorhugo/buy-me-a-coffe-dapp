@@ -1,9 +1,9 @@
 import { defineChain, type WalletClient } from 'viem'
-import type { PublicClient } from 'viem'
+import type { Address, PublicClient } from 'viem'
 import { create } from 'zustand'
 import type { EIP6963ProviderDetail } from '~/components/wallet/injected-wallet-provider/types'
 
-export async function getCurrentChain(client: PublicClient) {
+export async function getCurrentChainGanache(client: PublicClient) {
     const chainId = await client.getChainId()
     const currentChain = defineChain({
         id: chainId,
@@ -23,6 +23,46 @@ export async function getCurrentChain(client: PublicClient) {
         },
     })
     return currentChain
+}
+
+export async function getCurrentChainAnvil(client: PublicClient) {
+    const chainId = await client.getChainId()
+    const currentChain = defineChain({
+        id: chainId,
+        name: "Anvil Local",
+        nativeCurrency: {
+            name: "Ether",
+            symbol: "ETH",
+            decimals: 18,
+        },
+        rpcUrls: {
+            default: { 
+                http: ["http://127.0.0.1:8545"] 
+            },
+            public: {
+                http: ['http://127.0.0.1:8545'],
+            },
+        },
+    })
+    return currentChain
+}
+
+export async function getBalance(publicClient: PublicClient, address: Address) {
+    if (!publicClient) {
+        console.error('No public client found');
+        return BigInt(0);
+    }
+    if (!address) {
+        console.error('No address found');
+        return BigInt(0);
+    }
+    try {
+        const balance = await publicClient.getBalance({ address: address as Address });
+        return balance;
+    } catch (error) {
+        console.error('Error getting balance', error);
+        return BigInt(0);
+    }
 }
 
 type WalletStoreProps = {
