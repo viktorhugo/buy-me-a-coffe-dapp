@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "../ui/button";
 import { Loader } from "../ui/loading";
 import { ConnectWalletDialog } from "./connect-wallet-dialog";
-import { getBalance, getCurrentChainAnvil,getCurrentChainGanache, useWalletStore } from "~/store/wallet-store";
+import { getBalance, getCurrentChainAnvil, getCurrentChainGanache, useWalletStore } from "~/store/wallet-store";
 import { abi, contractAddress } from "./constants";
-import { ContractFunctionRevertedError, BaseError, parseEther, formatEther, type Abi, type SimulateContractParameters, type Address } from "viem";
+import { ContractFunctionRevertedError, BaseError, parseEther, formatEther, type Abi, type SimulateContractParameters, type Address, etherUnits } from "viem";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Form } from "react-router";
@@ -41,6 +41,7 @@ function ConnectedView() {
     const [ethAmount, setEthAmount] = useState<number | null>(null);
     const [withdrawStatus, setWithdrawStatus] = useState<boolean>(false);
     const [fundStatus, setFundStatus] = useState<boolean>(false);
+    const [ownerStatus, setOwnerStatus] = useState<boolean>(false);
 
     // Process the operation
     async function processOperation(operation: 'fund' | 'withdraw') {
@@ -70,8 +71,8 @@ function ConnectedView() {
                 address: contractAddress,
                 abi: abi as Abi,
                 functionName: operation,
-                // args: [connectedAccount],
-                chain: await getCurrentChainAnvil(publicClient),
+                args: [],
+                // chain: await getCurrentChainGanache(publicClient),
                 value: parseEther(ethAmount.toString()),
                 // gas: 300000n,
             }
@@ -121,7 +122,46 @@ function ConnectedView() {
                 }
             }
         }
-        
+    }
+
+    async function getOwner() {
+        console.log('getOwner');
+        if (!publicClient || !walletClient) {
+            console.error('No wallet client found');
+            return;
+        };
+
+        const [connectedAccount] = await walletClient.requestAddresses();
+        console.log('connectedAccount', connectedAccount);
+        if (!connectedAccount) {
+            console.error('No connected account');
+            return;
+        };
+
+        setOwnerStatus(true);
+
+        try {
+            // readContract
+            const data = await publicClient.readContract({
+                address: contractAddress,
+                abi: abi as Abi,
+                functionName: 'getPriceFeed',
+            });
+            console.log('data', parseEther(data as string));
+            setOwnerStatus(false);
+            
+        } catch (err) {
+            console.error('err', err);
+            setOwnerStatus(false);
+            toast.error(
+                "Error", 
+                {
+                    description: `Error: ${err}`,
+                    className: "bg-red-500 text-white",
+                    action: "destructive",
+                }
+            )
+        }
     }
 
     return (
@@ -141,7 +181,7 @@ function ConnectedView() {
 
                     <Separator className="my-4 text-slate-100" />
                     
-                    <Form method="post" className="flex flex-col gap-4">
+                    <Form className="flex flex-col gap-4" >
                         <CardContent>
                             <div className="grid w-full items-center gap-4">
                                 <div className="flex flex-col space-y-1.5">
@@ -153,7 +193,7 @@ function ConnectedView() {
                         <CardFooter className="flex justify-end-safe gap-2 mt-2">
                             <Button type="submit" onClick={() => processOperation('withdraw')}
                             variant="outline"
-                            className="w-1/2 cursor-pointer bg-blue-500 border-blue-500 text-white hover:bg-blue-400 hover:border-blue-400 hover:text-white">
+                            className="w-1/3 cursor-pointer bg-blue-500 border-blue-500 text-white hover:bg-blue-400 hover:border-blue-400 hover:text-white">
                                 {
                                     withdrawStatus 
                                         ? (<Loader2 className="animate-spin" size={16} />)
@@ -167,7 +207,7 @@ function ConnectedView() {
                             </Button>
                             <Button onClick={ () => processOperation('fund') }
                                     variant="outline"
-                                    className="w-1/2 cursor-pointer bg-amber-300 text-black border-amber-300 hover:bg-amber-200 hover:border-amber-200">
+                                    className="w-1/3 cursor-pointer bg-amber-300 text-black border-amber-300 hover:bg-amber-200 hover:border-amber-200">
                                 {
                                     fundStatus 
                                         ? (<Loader2 className="animate-spin" size={16} />)
@@ -175,6 +215,20 @@ function ConnectedView() {
                                             <>
                                             <Coffee className="mr-2 size-4" />
                                             Buy Coffee
+                                            </>
+                                        )
+                                }
+                            </Button>
+                            <Button onClick={() => getOwner()}
+                                    variant="outline"
+                                    className="w-1/3 cursor-pointer bg-amber-300 text-black border-amber-300 hover:bg-amber-200 hover:border-amber-200">
+                                {
+                                    ownerStatus 
+                                        ? (<Loader2 className="animate-spin" size={16} />)
+                                        : (
+                                            <>
+                                            <Info className="mr-2 size-4" />
+                                                Get Owner
                                             </>
                                         )
                                 }
