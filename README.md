@@ -1,6 +1,10 @@
 # Buy Me a Coffee DApp
 
-A modern full-stack application built with React Router, TypeScript, and modern development tools, designed to implement a "Buy Me a Coffee" DApp.
+A modern application built with React Router, TypeScript, and modern development tools, designed to implement a "Buy Me a Coffee" DApp.
+
+## Features
+
+- **Wallet Connection:** Wallet connection is handled through EIP-6963 for a better user experience.
 
 ## Core Tools and Technologies
 
